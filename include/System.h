@@ -60,6 +60,9 @@ class System {
   // grayscale. Returns the camera pose (empty if tracking fails).
   cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight,
                       const double &timestamp);
+  cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight,
+                      const cv::Mat &rawBGR, const cv::Mat &rawDepth,
+                      const double &timestamp);
 
   // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
   // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to
@@ -67,7 +70,9 @@ class System {
   // if tracking fails).
   cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
                     const double &timestamp);
-
+  cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
+                    const cv::Mat &rawBGR, const cv::Mat &rawDepth,
+                    const double &timestamp);
   // Proccess the given monocular frame
   // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to
   // grayscale. Returns the camera pose (empty if tracking fails).
@@ -120,6 +125,9 @@ class System {
   std::vector< MapPoint * > GetTrackedMapPoints();
   std::vector< cv::KeyPoint > GetTrackedKeyPointsUn();
 
+  // Map structure that stores the pointers to all KeyFrames and MapPoints.
+  Map *mpMap;
+
  private:
   // Input sensor
   eSensor mSensor;
@@ -130,9 +138,6 @@ class System {
   // KeyFrame database for place recognition (relocalization and loop
   // detection).
   KeyFrameDatabase *mpKeyFrameDatabase;
-
-  // Map structure that stores the pointers to all KeyFrames and MapPoints.
-  Map *mpMap;
 
   // Tracker. It receives a frame and computes the associated camera pose.
   // It also decides when to insert a new keyframe, create some new MapPoints

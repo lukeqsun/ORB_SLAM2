@@ -41,6 +41,8 @@ class KeyFrameDatabase;
 class KeyFrame {
  public:
   KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB);
+  KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB, const cv::Mat& rawBGR,
+           const cv::Mat& rawDepth, const double& timestamp);
 
   // Pose functions
   void SetPose(const cv::Mat& Tcw);
@@ -182,6 +184,11 @@ class KeyFrame {
   const int mnMaxX;
   const int mnMaxY;
   const cv::Mat mK;
+
+  // Raw image data and timestamp for rendering
+  cv::Mat mRawBGR;
+  cv::Mat mRawDepth;
+  double mTimestamp;
 
   // The following variables need to be accessed trough a mutex to be thread
   // safe.

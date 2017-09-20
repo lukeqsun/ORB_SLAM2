@@ -55,10 +55,11 @@ System::System(const string &strVocFile, const string &strSettingsFile,
 
   // Check settings file
   cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
-  if (!fsSettings.isOpened()) {
-    cerr << "Failed to open settings file at: " << strSettingsFile << endl;
-    exit(-1);
-  }
+  // FIXME
+  // if (!fsSettings.isOpened()) {
+  //   cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+  //   exit(-1);
+  // }
 
   // Load ORB Vocabulary
   cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
@@ -84,7 +85,7 @@ System::System(const string &strVocFile, const string &strSettingsFile,
 
   // Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this
-  //constructor)
+  // constructor)
   mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                            mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
 
@@ -156,6 +157,105 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight,
   }
 
   cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft, imRight, timestamp);
+
+  unique_lock< mutex > lock2(mMutexState);
+  mTrackingState = mpTracker->mState;
+  mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+  mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+  return Tcw;
+}
+
+cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight,
+                            const cv::Mat &rawBGR, const cv::Mat &rawDepth,
+                            const double &timestamp) {
+  if (mSensor != STEREO) {
+    cerr << "ERROR: you called TrackStereo but input sensor was not set to "
+            "STEREO."
+         << endl;
+    exit(-1);
+  }
+
+  // Check mode change
+  {
+    unique_lock< mutex > lock(mMutexMode);
+    if (mbActivateLocalizationMode) {
+      mpLocalMapper->RequestStop();
+
+      // Wait until Local Mapping has effectively stopped
+      while (!mpLocalMapper->isStopped()) {
+        usleep(1000);
+      }
+
+      mpTracker->InformOnlyTracking(true);
+      mbActivateLocalizationMode = false;
+    }
+    if (mbDeactivateLocalizationMode) {
+      mpTracker->InformOnlyTracking(false);
+      mpLocalMapper->Release();
+      mbDeactivateLocalizationMode = false;
+    }
+  }
+
+  // Check reset
+  {
+    unique_lock< mutex > lock(mMutexReset);
+    if (mbReset) {
+      mpTracker->Reset();
+      mbReset = false;
+    }
+  }
+
+  cv::Mat Tcw =
+      mpTracker->GrabImageStereo(imLeft, imRight, rawBGR, rawDepth, timestamp);
+
+  unique_lock< mutex > lock2(mMutexState);
+  mTrackingState = mpTracker->mState;
+  mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
+  mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+  return Tcw;
+}
+
+cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
+                          const cv::Mat &rawBGR, const cv::Mat &rawDepth,
+                          const double &timestamp) {
+  if (mSensor != RGBD) {
+    cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD."
+         << endl;
+    exit(-1);
+  }
+
+  // Check mode change
+  {
+    unique_lock< mutex > lock(mMutexMode);
+    if (mbActivateLocalizationMode) {
+      mpLocalMapper->RequestStop();
+
+      // Wait until Local Mapping has effectively stopped
+      while (!mpLocalMapper->isStopped()) {
+        usleep(1000);
+      }
+
+      mpTracker->InformOnlyTracking(true);
+      mbActivateLocalizationMode = false;
+    }
+    if (mbDeactivateLocalizationMode) {
+      mpTracker->InformOnlyTracking(false);
+      mpLocalMapper->Release();
+      mbDeactivateLocalizationMode = false;
+    }
+  }
+
+  // Check reset
+  {
+    unique_lock< mutex > lock(mMutexReset);
+    if (mbReset) {
+      mpTracker->Reset();
+      mbReset = false;
+    }
+  }
+
+  cv::Mat Tcw =
+      mpTracker->GrabImageRGBD(im, depthmap, rawBGR, rawDepth, timestamp);
 
   unique_lock< mutex > lock2(mMutexState);
   mTrackingState = mpTracker->mState;

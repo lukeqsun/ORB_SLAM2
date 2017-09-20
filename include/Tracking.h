@@ -58,8 +58,15 @@ class Tracking {
   // matching.
   cv::Mat GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight,
                           const double& timestamp);
+  cv::Mat GrabImageStereo(const cv::Mat& imRectLeft, const cv::Mat& imRectRight,
+                          const cv::Mat& rawBGR, const cv::Mat& rawDepth,
+                          const double& timestamp);
   cv::Mat GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
                         const double& timestamp);
+  cv::Mat GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
+                        const cv::Mat& rawBGR, const cv::Mat& rawDepth,
+                        const double& timestamp);
+
   cv::Mat GrabImageMonocular(const cv::Mat& im, const double& timestamp);
 
   void SetLocalMapper(LocalMapping* pLocalMapper);
@@ -95,6 +102,11 @@ class Tracking {
   // Current Frame
   Frame mCurrentFrame;
   cv::Mat mImGray;
+
+  // Raw image data and timestamp
+  cv::Mat mRawBGR;
+  cv::Mat mRawDepth;
+  double mTimestamp;
 
   // Initialization Variables (Monocular)
   std::vector< int > mvIniLastMatches;
@@ -210,6 +222,7 @@ class Tracking {
   Frame mLastFrame;
   unsigned int mnLastKeyFrameId;
   unsigned int mnLastRelocFrameId;
+  bool mStoreRawImage;
 
   // Motion Model
   cv::Mat mVelocity;

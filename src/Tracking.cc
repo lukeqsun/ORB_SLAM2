@@ -55,7 +55,8 @@ Tracking::Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer,
       mpFrameDrawer(pFrameDrawer),
       mpMapDrawer(pMapDrawer),
       mpMap(pMap),
-      mnLastRelocFrameId(0) {
+      mnLastRelocFrameId(0),
+      mStoreRawImage(false) {
   // Load camera parameters from settings file
 
   cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -164,6 +165,19 @@ void Tracking::SetViewer(Viewer* pViewer) { mpViewer = pViewer; }
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
                                   const cv::Mat& imRectRight,
+                                  const cv::Mat& rawBGR,
+                                  const cv::Mat& rawDepth,
+                                  const double& timestamp) {
+  mStoreRawImage = true;
+  mRawBGR = rawBGR.clone();
+  mRawDepth = rawDepth.clone();
+  mTimestamp = timestamp;
+
+  return GrabImageStereo(imRectLeft, imRectRight, timestamp);
+}
+
+cv::Mat Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
+                                  const cv::Mat& imRectRight,
                                   const double& timestamp) {
   mImGray = imRectLeft;
   cv::Mat imGrayRight = imRectRight;
@@ -193,6 +207,17 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat& imRectLeft,
   Track();
 
   return mCurrentFrame.mTcw.clone();
+}
+
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
+                                const cv::Mat& rawBGR, const cv::Mat& rawDepth,
+                                const double& timestamp) {
+  mStoreRawImage = true;
+  mRawBGR = rawBGR.clone();
+  mRawDepth = rawDepth.clone();
+  mTimestamp = timestamp;
+
+  return GrabImageRGBD(imRGB, imD, timestamp);
 }
 
 cv::Mat Tracking::GrabImageRGBD(const cv::Mat& imRGB, const cv::Mat& imD,
@@ -953,8 +978,13 @@ bool Tracking::NeedNewKeyFrame() {
 
 void Tracking::CreateNewKeyFrame() {
   if (!mpLocalMapper->SetNotStop(true)) return;
-
-  KeyFrame* pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+  KeyFrame* pKF;
+  if (mStoreRawImage)
+    pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB, mRawBGR, mRawDepth,
+                       mTimestamp);
+  else {
+    pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
+  }
 
   mpReferenceKF = pKF;
   mCurrentFrame.mpReferenceKF = pKF;
