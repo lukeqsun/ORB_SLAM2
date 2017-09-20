@@ -32,9 +32,10 @@ static bool has_suffix(const std::string &str, const std::string &suffix) {
 namespace ORB_SLAM2 {
 
 System::System(const string &strVocFile, const string &strSettingsFile,
-               const eSensor sensor, const bool bUseViewer, bool is_save_map_)
+               const string &mapBinFile, const eSensor sensor,
+               const bool bUseViewer)
     : mSensor(sensor),
-      is_save_map(is_save_map_),
+      is_save_map(true),
       mpViewer(static_cast< Viewer * >(NULL)),
       mbReset(false),
       mbActivateLocalizationMode(false),
@@ -68,11 +69,8 @@ System::System(const string &strVocFile, const string &strSettingsFile,
   //    exit(-1);
   // }
 
-  cv::FileNode mapfilen = fsSettings["Map.mapfile"];
   bool bReuseMap = false;
-  if (!mapfilen.empty()) {
-    mapfile = (string)mapfilen;
-  }
+  mapfile = mapBinFile;
 
   // Load ORB Vocabulary
   cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
@@ -608,6 +606,7 @@ void System::SaveMap(const string &filename) {
   cout << " ...done" << std::endl;
   out.close();
 }
+
 bool System::LoadMap(const string &filename) {
   std::ifstream in(filename, std::ios_base::binary);
   if (!in) {
