@@ -593,13 +593,30 @@ vector< cv::KeyPoint > System::GetTrackedKeyPointsUn() {
   return mTrackedKeyPointsUn;
 }
 
+void System::SaveMap() {
+  unique_lock< mutex > lock(mMutexReset);
+  std::string tmpFilename(mapfile);
+  tmpFilename.append(".tmp");
+  std::ofstream out(tmpFilename, std::ios_base::binary);
+  if (!out) {
+    cerr << "Cannot Write to Mapfile: " << tmpFilename << std::endl;
+    return;
+  }
+  cout << "Saving Mapfile: " << tmpFilename << std::flush;
+  boost::archive::binary_oarchive oa(out, boost::archive::no_header);
+  oa << mpMap;
+  oa << mpKeyFrameDatabase;
+  cout << " ...done" << std::endl;
+  out.close();
+}
+
 void System::SaveMap(const string &filename) {
   std::ofstream out(filename, std::ios_base::binary);
   if (!out) {
-    cerr << "Cannot Write to Mapfile: " << mapfile << std::endl;
+    cerr << "Cannot Write to Mapfile: " << filename << std::endl;
     exit(-1);
   }
-  cout << "Saving Mapfile: " << mapfile << std::flush;
+  cout << "Saving Mapfile: " << filename << std::flush;
   boost::archive::binary_oarchive oa(out, boost::archive::no_header);
   oa << mpMap;
   oa << mpKeyFrameDatabase;
@@ -610,11 +627,11 @@ void System::SaveMap(const string &filename) {
 bool System::LoadMap(const string &filename) {
   std::ifstream in(filename, std::ios_base::binary);
   if (!in) {
-    cerr << "Cannot Open Mapfile: " << mapfile << " , Create a new one"
+    cerr << "Cannot Open Mapfile: " << filename << " , Create a new one"
          << std::endl;
     return false;
   }
-  cout << "Loading Mapfile: " << mapfile << std::flush;
+  cout << "Loading Mapfile: " << filename << std::flush;
   boost::archive::binary_iarchive ia(in, boost::archive::no_header);
   ia >> mpMap;
   ia >> mpKeyFrameDatabase;

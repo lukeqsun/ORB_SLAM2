@@ -129,8 +129,8 @@ class System {
   // Map structure that stores the pointers to all KeyFrames and MapPoints.
   Map *mpMap;
 
- private:
   // Save/Load functions
+  void SaveMap();
   void SaveMap(const string &filename);
   bool LoadMap(const string &filename);
 

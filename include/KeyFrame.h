@@ -115,6 +115,8 @@ class KeyFrame {
     return pKF1->mnId < pKF2->mnId;
   }
 
+  bool mbVisited;
+
  public:
   // for serialization
   KeyFrame();  // Default constructor for serialization, need to deal with const

@@ -77,6 +77,7 @@ void Viewer::Run() {
   pangolin::Var< bool > menuShowGraph("menu.Show Graph", true, true);
   pangolin::Var< bool > menuLocalizationMode("menu.Localization Mode",
                                              mbReuseMap, false);
+  pangolin::Var< bool > menuSaveMap("menu.Save Map", false, false);
   pangolin::Var< bool > menuReset("menu.Reset", false, false);
 
   // Define Camera Render Object (for view / scene browsing)
@@ -136,6 +137,11 @@ void Viewer::Run() {
     cv::Mat im = mpFrameDrawer->DrawFrame();
     cv::imshow("ORB-SLAM2: Current Frame", im);
     cv::waitKey(mT);
+
+    if (menuSaveMap) {
+      mpSystem->SaveMap();
+      menuSaveMap = false;
+    }
 
     if (menuReset) {
       menuShowGraph = true;
