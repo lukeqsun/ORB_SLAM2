@@ -28,12 +28,7 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
-find_package(OpenCV 3 REQUIRED
-  NO_MODULE
-  PATHS /usr/local
-  NO_DEFAULT_PATH
-)
-
+find_package(OpenCV 3 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 
@@ -85,11 +80,11 @@ target_link_libraries(${PROJECT_NAME} ${BOOST_SERIALIZATION})
 
 # Build examples
 
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 
-# add_executable(rgbd_tum
-# Examples/RGB-D/rgbd_tum.cc)
-# target_link_libraries(rgbd_tum ${PROJECT_NAME})
+add_executable(rgbd_tum
+Examples/RGB-D/rgbd_tum.cc)
+target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
 # set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
