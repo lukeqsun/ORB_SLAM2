@@ -36,8 +36,14 @@
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
+#include "OctomapBuilder.h"
 
 #include <mutex>
+
+#ifdef USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudafilters.hpp>
+#endif
 
 namespace ORB_SLAM2 {
 
@@ -82,6 +88,8 @@ class Tracking {
   // Use this function if you have deactivated local mapping and you only want
   // to localize the camera.
   void InformOnlyTracking(const bool& flag);
+
+  void UpdateCollision(const std::vector< std::vector< float > >& bCollision);
 
  public:
   // Tracking states
@@ -128,6 +136,23 @@ class Tracking {
   bool mbOnlyTracking;
 
   void Reset();
+
+  // For computing the pose in the world frame
+  cv::Mat T_wb_initial_mat;
+  cv::Mat currPose;
+
+  cv::Mat T_ws_mat = (cv::Mat_< float >(4, 4) << 0, 0, 1, 0.22,  // 0.22,//0.25,
+                      -1, 0, 0, -0.1,                            // -0.1,//-0.1,
+                      0, -1, 0, 0, 0, 0, 0, 1);
+
+  cv::Mat T_cb_mat = (cv::Mat_< float >(4, 4) << 0, -1, 0, -0.1,  //-0.1,
+                      0, 0, -1, 0, 1, 0, 0, -0.22,                //-0.22,
+                      0, 0, 0, 1);
+  bool TwbInitialized = false;
+  size_t TwbCounter = 0;
+
+  // Check if the current frame is keyframe
+  bool mbKeyframe;
 
  protected:
   // Main tracking function. It is independent of the input sensor.
@@ -231,6 +256,13 @@ class Tracking {
   bool mbRGB;
 
   list< MapPoint* > mlpTemporalPoints;
+
+  float mDepthCutoff;
+  int mEnableDepthFilter;
+#ifdef USE_CUDA
+  cv::Ptr< cv::cuda::Filter > mpClosingFilter;
+  cv::Ptr< cv::cuda::Filter > mpOpeningFilter;
+#endif
 };
 
 }  // namespace ORB_SLAM2

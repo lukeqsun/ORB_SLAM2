@@ -34,6 +34,7 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
+#include "OctomapBuilder.h"
 
 #include "BoostArchiver.h"
 // for map file io
@@ -102,6 +103,7 @@ class System {
   // This function must be called before saving the trajectory.
   void Shutdown();
 
+  void SaveOctoMap(const string &filename);
   // Save camera trajectory in the TUM RGB-D dataset format.
   // Only for stereo and RGB-D. This method does not work for monocular.
   // Call first Shutdown()
@@ -134,6 +136,8 @@ class System {
   void SaveMap(const string &filename);
   bool LoadMap(const string &filename);
 
+  bool shouldFinished();
+
  private:
   // Input sensor
   eSensor mSensor;
@@ -153,6 +157,11 @@ class System {
   // and performs relocalization if tracking fails.
   Tracking *mpTracker;
 
+  // Octomap building.
+  OctomapBuilder *mpOctomapBuilder;
+  bool octomapInitialize = false;
+  size_t octomapCounter = 0;
+
   // Local Mapper. It manages the local map and performs local bundle
   // adjustment.
   LocalMapping *mpLocalMapper;
@@ -168,9 +177,10 @@ class System {
   FrameDrawer *mpFrameDrawer;
   MapDrawer *mpMapDrawer;
 
-  // System threads: Local Mapping, Loop Closing, Viewer.
+  // System threads: Octomap Building, Local Mapping, Loop Closing, Viewer.
   // The Tracking thread "lives" in the main execution thread that creates the
   // System object.
+  std::thread *mptOctomapBuilding;
   std::thread *mptLocalMapping;
   std::thread *mptLoopClosing;
   std::thread *mptViewer;

@@ -11,6 +11,8 @@ Examples/ROS/ORB_SLAM2/Stereo
 Examples/ROS/ORB_SLAM2/build/
 Examples/Stereo/stereo_euroc
 Examples/Stereo/stereo_kitti
+ROS/ORB_Octomap_Fusion/fusion
+ROS/ORB_Octomap_Fusion/build/
 KeyFrameTrajectory.txt
 Thirdparty/DBoW2/build/
 Thirdparty/DBoW2/lib/
@@ -23,4 +25,10 @@ Vocabulary/bin_vocabulary
 build/
 *~
 lib/
+bin/
 *.gch
+*.map.bin
+*.orbtraj
+*.orbtraj.keyframe
+*.map.bin.tmp
+*.octomap.bt

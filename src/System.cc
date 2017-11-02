@@ -110,6 +110,11 @@ System::System(const string &strVocFile, const string &strSettingsFile,
       new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpMap,
                    mpKeyFrameDatabase, strSettingsFile, mSensor, bReuseMap);
 
+  // Initialize the Octomap thread
+  mpOctomapBuilder = new OctomapBuilder(strSettingsFile);
+  mptOctomapBuilding =
+      new thread(&ORB_SLAM2::OctomapBuilder::Run, mpOctomapBuilder);
+
   // Initialize the Local Mapping thread and launch
   mpLocalMapper = new LocalMapping(mpMap, mSensor == MONOCULAR);
   mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run, mpLocalMapper);
@@ -271,12 +276,26 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
     unique_lock< mutex > lock(mMutexReset);
     if (mbReset) {
       mpTracker->Reset();
+      mpOctomapBuilder->reset();
       mbReset = false;
     }
   }
 
   cv::Mat Tcw =
       mpTracker->GrabImageRGBD(im, depthmap, rawBGR, rawDepth, timestamp);
+
+  // If is keyframe, update the octomap
+  cv::Mat currPose = mpTracker->currPose.clone();
+  if ((mpTracker->mbKeyframe || !octomapInitialize) && currPose.type() == 5) {
+    mpOctomapBuilder->UpdateOctomap(depthmap, currPose);
+    if (mpOctomapBuilder->calcOccupiedPoints()) {
+      vector< vector< float > > occupiedPoints =
+          mpOctomapBuilder->getOccupiedPoints();
+      mpTracker->UpdateCollision(occupiedPoints);
+
+      if (occupiedPoints.size() != 0) octomapInitialize = true;
+    }
+  }
 
   unique_lock< mutex > lock2(mMutexState);
   mTrackingState = mpTracker->mState;
@@ -319,11 +338,25 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
     unique_lock< mutex > lock(mMutexReset);
     if (mbReset) {
       mpTracker->Reset();
+      mpOctomapBuilder->reset();
       mbReset = false;
     }
   }
 
   cv::Mat Tcw = mpTracker->GrabImageRGBD(im, depthmap, timestamp);
+
+  // If is keyframe, update the octomap
+  cv::Mat currPose = mpTracker->currPose.clone();
+  if ((mpTracker->mbKeyframe || !octomapInitialize) && currPose.type() == 5) {
+    mpOctomapBuilder->UpdateOctomap(depthmap, currPose);
+    if (mpOctomapBuilder->calcOccupiedPoints()) {
+      vector< vector< float > > occupiedPoints =
+          mpOctomapBuilder->getOccupiedPoints();
+      mpTracker->UpdateCollision(occupiedPoints);
+
+      if (occupiedPoints.size() != 0) octomapInitialize = true;
+    }
+  }
 
   unique_lock< mutex > lock2(mMutexState);
   mTrackingState = mpTracker->mState;
@@ -405,6 +438,8 @@ void System::Reset() {
   mbReset = true;
 }
 
+bool System::shouldFinished() { return mpViewer->shouldFinished(); }
+
 void System::Shutdown() {
   mpLocalMapper->RequestFinish();
   mpLoopCloser->RequestFinish();
@@ -422,6 +457,11 @@ void System::Shutdown() {
   }
   if (mpViewer) pangolin::BindToContext("ORB-SLAM2: Map Viewer");
   if (is_save_map) SaveMap(mapfile);
+}
+
+void System::SaveOctoMap(const string &filename) {
+  cout << endl << "Saving octomap to " << filename << " ..." << endl;
+  mpOctomapBuilder->saveOctoMap(filename);
 }
 
 void System::SaveTrajectoryTUM(const string &filename) {

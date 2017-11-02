@@ -201,6 +201,7 @@ class KeyFrame {
   const cv::Mat mK;
 
   // Raw image data and timestamp for rendering
+  cv::Mat mOctoPose;
   cv::Mat mRawBGR;
   cv::Mat mRawDepth;
   double mTimestamp;
