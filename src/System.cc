@@ -677,11 +677,11 @@ void System::SaveMap(const string &filename) {
 bool System::LoadMap(const string &filename) {
   std::ifstream in(filename, std::ios_base::binary);
   if (!in) {
-    cerr << "Cannot Open Mapfile: " << mapfile << " , Create a new one"
+    cerr << "Cannot Open Mapfile: " << filename << " , Create a new one"
          << std::endl;
     return false;
   }
-  cout << "Loading Mapfile: " << mapfile << std::flush;
+  cout << "Loading Mapfile: " << filename << std::flush;
   boost::archive::binary_iarchive ia(in, boost::archive::no_header);
   ia >> mpMap;
   ia >> mpKeyFrameDatabase;
