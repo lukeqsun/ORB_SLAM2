@@ -643,6 +643,11 @@ void System::SaveMap() {
     return;
   }
   cout << "Saving Mapfile: " << tmpFilename << std::flush;
+
+  vector< KeyFrame * > vpKeyFrames = mpMap->GetAllKeyFrames();
+  for (int i = 0; i < (int)vpKeyFrames.size(); i++)
+    vpKeyFrames[i]->mbVisited = false;
+
   boost::archive::binary_oarchive oa(out, boost::archive::no_header);
   oa << mpMap;
   oa << mpKeyFrameDatabase;
@@ -657,6 +662,11 @@ void System::SaveMap(const string &filename) {
     exit(-1);
   }
   cout << "Saving Mapfile: " << filename << std::flush;
+
+  vector< KeyFrame * > vpKeyFrames = mpMap->GetAllKeyFrames();
+  for (int i = 0; i < (int)vpKeyFrames.size(); i++)
+    vpKeyFrames[i]->mbVisited = false;
+
   boost::archive::binary_oarchive oa(out, boost::archive::no_header);
   oa << mpMap;
   oa << mpKeyFrameDatabase;
@@ -667,11 +677,11 @@ void System::SaveMap(const string &filename) {
 bool System::LoadMap(const string &filename) {
   std::ifstream in(filename, std::ios_base::binary);
   if (!in) {
-    cerr << "Cannot Open Mapfile: " << filename << " , Create a new one"
+    cerr << "Cannot Open Mapfile: " << mapfile << " , Create a new one"
          << std::endl;
     return false;
   }
-  cout << "Loading Mapfile: " << filename << std::flush;
+  cout << "Loading Mapfile: " << mapfile << std::flush;
   boost::archive::binary_iarchive ia(in, boost::archive::no_header);
   ia >> mpMap;
   ia >> mpKeyFrameDatabase;
@@ -679,10 +689,13 @@ bool System::LoadMap(const string &filename) {
   cout << " ...done" << std::endl;
   cout << "Map Reconstructing" << flush;
   vector< ORB_SLAM2::KeyFrame * > vpKFS = mpMap->GetAllKeyFrames();
+  unsigned long mnFrameId = 0;
   for (auto it : vpKFS) {
     it->SetORBvocabulary(mpVocabulary);
     it->ComputeBoW();
+    if (it->mnFrameId > mnFrameId) mnFrameId = it->mnFrameId;
   }
+  Frame::nNextId = mnFrameId;
   cout << " ...done" << endl;
   in.close();
   return true;

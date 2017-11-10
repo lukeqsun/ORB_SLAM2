@@ -736,8 +736,13 @@ KeyFrame::KeyFrame()
       mnMinY(0),
       mnMaxX(0),
       mnMaxY(0) {}
+
 template < class Archive >
 void KeyFrame::serialize(Archive &ar, const unsigned int version) {
+  if (mbVisited) return;
+
+  mbVisited = true;
+
   // no mutex needed vars
   ar &nNextId;
   ar &mnId;
