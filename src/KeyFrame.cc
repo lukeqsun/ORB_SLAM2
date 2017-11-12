@@ -704,7 +704,8 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
 
 // Default serializing Constructor
 KeyFrame::KeyFrame()
-    : mnFrameId(0),
+    : mbVisited(false),
+      mnFrameId(0),
       mTimeStamp(0.0),
       mnGridCols(FRAME_GRID_COLS),
       mnGridRows(FRAME_GRID_ROWS),
@@ -739,10 +740,6 @@ KeyFrame::KeyFrame()
 
 template < class Archive >
 void KeyFrame::serialize(Archive &ar, const unsigned int version) {
-  if (mbVisited) return;
-
-  mbVisited = true;
-
   // no mutex needed vars
   ar &nNextId;
   ar &mnId;

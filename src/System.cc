@@ -643,11 +643,6 @@ void System::SaveMap() {
     return;
   }
   cout << "Saving Mapfile: " << tmpFilename << std::flush;
-
-  vector< KeyFrame * > vpKeyFrames = mpMap->GetAllKeyFrames();
-  for (int i = 0; i < (int)vpKeyFrames.size(); i++)
-    vpKeyFrames[i]->mbVisited = false;
-
   boost::archive::binary_oarchive oa(out, boost::archive::no_header);
   oa << mpMap;
   oa << mpKeyFrameDatabase;
@@ -662,11 +657,6 @@ void System::SaveMap(const string &filename) {
     exit(-1);
   }
   cout << "Saving Mapfile: " << filename << std::flush;
-
-  vector< KeyFrame * > vpKeyFrames = mpMap->GetAllKeyFrames();
-  for (int i = 0; i < (int)vpKeyFrames.size(); i++)
-    vpKeyFrames[i]->mbVisited = false;
-
   boost::archive::binary_oarchive oa(out, boost::archive::no_header);
   oa << mpMap;
   oa << mpKeyFrameDatabase;
