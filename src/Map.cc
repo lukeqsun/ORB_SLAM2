@@ -24,7 +24,7 @@
 
 namespace ORB_SLAM2 {
 
-Map::Map() : mnMaxKFid(0), mnBigChangeIdx(0) {}
+Map::Map() : mnEnableLoopClosing(true), mnMaxKFid(0), mnBigChangeIdx(0) {}
 
 void Map::AddKeyFrame(KeyFrame *pKF) {
   unique_lock< mutex > lock(mMutexMap);

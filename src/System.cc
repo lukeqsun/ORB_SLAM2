@@ -36,6 +36,7 @@ System::System(const string &strVocFile, const string &strSettingsFile,
                const bool bUseViewer)
     : mSensor(sensor),
       is_save_map(true),
+      is_paused(false),
       mpViewer(static_cast< Viewer * >(NULL)),
       mbReset(false),
       mbActivateLocalizationMode(false),
@@ -244,6 +245,11 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight,
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
                           const cv::Mat &rawBGR, const cv::Mat &rawDepth,
                           const double &timestamp) {
+  if (is_paused) {
+    cv::Mat pause_mat;
+    return pause_mat;
+  }
+
   if (mSensor != RGBD) {
     cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD."
          << endl;
@@ -306,6 +312,11 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
 
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap,
                           const double &timestamp) {
+  if (is_paused) {
+    cv::Mat pause_mat;
+    return pause_mat;
+  }
+
   if (mSensor != RGBD) {
     cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD."
          << endl;
@@ -632,6 +643,18 @@ vector< cv::KeyPoint > System::GetTrackedKeyPointsUn() {
   unique_lock< mutex > lock(mMutexState);
   return mTrackedKeyPointsUn;
 }
+
+void System::EnableLoopClosing() {
+  unique_lock< mutex > lock(mpMap->mMutexLoopClosing);
+  mpMap->mnEnableLoopClosing = true;
+}
+
+void System::DisableLoopClosing() {
+  unique_lock< mutex > lock(mpMap->mMutexLoopClosing);
+  mpMap->mnEnableLoopClosing = false;
+}
+
+void System::SetPause() { is_paused = !is_paused; }
 
 void System::SaveMap() {
   unique_lock< mutex > lock(mMutexReset);

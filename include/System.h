@@ -131,6 +131,11 @@ class System {
   // Map structure that stores the pointers to all KeyFrames and MapPoints.
   Map *mpMap;
 
+  void EnableLoopClosing();
+  void DisableLoopClosing();
+
+  void SetPause();
+
   // Save/Load functions
   void SaveMap();
   void SaveMap(const string &filename);
@@ -151,6 +156,8 @@ class System {
 
   string mapfile;
   bool is_save_map;
+
+  bool is_paused;
 
   // Tracker. It receives a frame and computes the associated camera pose.
   // It also decides when to insert a new keyframe, create some new MapPoints

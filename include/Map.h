@@ -63,6 +63,9 @@ class Map {
 
   vector< KeyFrame* > mvpKeyFrameOrigins;
 
+  bool mnEnableLoopClosing;
+  std::mutex mMutexLoopClosing;
+
   std::mutex mMutexMapUpdate;
   std::mutex mMutexCollision;
   // This avoid that two points are created simultaneously in separate threads

@@ -96,6 +96,7 @@ bool LoopClosing::CheckNewKeyFrames() {
 }
 
 bool LoopClosing::DetectLoop() {
+  bool loopClosingEnabled = true;
   {
     unique_lock< mutex > lock(mMutexLoopQueue);
     mpCurrentKF = mlpLoopKeyFrameQueue.front();
@@ -103,6 +104,11 @@ bool LoopClosing::DetectLoop() {
     // Avoid that a keyframe can be erased while it is being process by this
     // thread
     mpCurrentKF->SetNotErase();
+  }
+
+  {
+    unique_lock< mutex > lock(mpMap->mMutexLoopClosing);
+    loopClosingEnabled = mpMap->mnEnableLoopClosing;
   }
 
   // If the map contains less than 10 KF or less than 10 KF have passed from
@@ -135,7 +141,7 @@ bool LoopClosing::DetectLoop() {
       mpKeyFrameDB->DetectLoopCandidates(mpCurrentKF, minScore);
 
   // If there are no loop candidates, just add new keyframe and return false
-  if (vpCandidateKFs.empty()) {
+  if (vpCandidateKFs.empty() || !loopClosingEnabled) {
     mpKeyFrameDB->add(mpCurrentKF);
     mvConsistentGroups.clear();
     mpCurrentKF->SetErase();
@@ -163,8 +169,8 @@ bool LoopClosing::DetectLoop() {
       set< KeyFrame* > sPreviousGroup = mvConsistentGroups[iG].first;
 
       bool bConsistent = false;
-      for (set< KeyFrame* >::iterator sit = spCandidateGroup.begin(),
-                                      send = spCandidateGroup.end();
+      for (set< KeyFrame * >::iterator sit = spCandidateGroup.begin(),
+                                       send = spCandidateGroup.end();
            sit != send; sit++) {
         if (sPreviousGroup.count(*sit)) {
           bConsistent = true;
@@ -412,8 +418,8 @@ void LoopClosing::CorrectLoop() {
     // Get Map Mutex
     unique_lock< mutex > lock(mpMap->mMutexMapUpdate);
 
-    for (vector< KeyFrame* >::iterator vit = mvpCurrentConnectedKFs.begin(),
-                                       vend = mvpCurrentConnectedKFs.end();
+    for (vector< KeyFrame * >::iterator vit = mvpCurrentConnectedKFs.begin(),
+                                        vend = mvpCurrentConnectedKFs.end();
          vit != vend; vit++) {
       KeyFrame* pKFi = *vit;
 
@@ -511,8 +517,8 @@ void LoopClosing::CorrectLoop() {
   // attaching both sides of the loop
   map< KeyFrame*, set< KeyFrame* > > LoopConnections;
 
-  for (vector< KeyFrame* >::iterator vit = mvpCurrentConnectedKFs.begin(),
-                                     vend = mvpCurrentConnectedKFs.end();
+  for (vector< KeyFrame * >::iterator vit = mvpCurrentConnectedKFs.begin(),
+                                      vend = mvpCurrentConnectedKFs.end();
        vit != vend; vit++) {
     KeyFrame* pKFi = *vit;
     vector< KeyFrame* > vpPreviousNeighbors =
@@ -521,13 +527,13 @@ void LoopClosing::CorrectLoop() {
     // Update connections. Detect new links.
     pKFi->UpdateConnections();
     LoopConnections[pKFi] = pKFi->GetConnectedKeyFrames();
-    for (vector< KeyFrame* >::iterator vit_prev = vpPreviousNeighbors.begin(),
-                                       vend_prev = vpPreviousNeighbors.end();
+    for (vector< KeyFrame * >::iterator vit_prev = vpPreviousNeighbors.begin(),
+                                        vend_prev = vpPreviousNeighbors.end();
          vit_prev != vend_prev; vit_prev++) {
       LoopConnections[pKFi].erase(*vit_prev);
     }
-    for (vector< KeyFrame* >::iterator vit2 = mvpCurrentConnectedKFs.begin(),
-                                       vend2 = mvpCurrentConnectedKFs.end();
+    for (vector< KeyFrame * >::iterator vit2 = mvpCurrentConnectedKFs.begin(),
+                                        vend2 = mvpCurrentConnectedKFs.end();
          vit2 != vend2; vit2++) {
       LoopConnections[pKFi].erase(*vit2);
     }

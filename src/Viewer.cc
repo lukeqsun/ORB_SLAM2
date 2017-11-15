@@ -94,11 +94,14 @@ void Viewer::Run() {
   pangolin::CreatePanel("menu4");
   pangolin::CreatePanel("menu5");
 
+  pangolin::Var< bool > menuPause("menu0.Pause", false, false);
   pangolin::Var< bool > menuShowPoints("menu0.Show Points", true, true);
   pangolin::Var< bool > menuShowOctomap("menu0.Show Octomap", true, false);
   pangolin::Var< bool > menuShowKeyFrames("menu0.Show KeyFrames", true, true);
   pangolin::Var< bool > menuFollowCamera("menu1.Follow Camera", true, false);
   pangolin::Var< bool > menuShowGraph("menu1.Show Graph", true, true);
+  pangolin::Var< bool > menuEnableLoopClosing("menu1.Enable Loop Closing", true,
+                                              true);
   pangolin::Var< bool > menuLocalizationMode("menu1.Localization Mode",
                                              mbReuseMap, false);
   pangolin::Var< std::string > menuState("menu2.State", "Unknown");
@@ -223,6 +226,12 @@ void Viewer::Run() {
     mpMapDrawer->DrawCurrentCamera(Twc);
     if (menuShowKeyFrames || menuShowGraph)
       mpMapDrawer->DrawKeyFrames(menuShowKeyFrames, menuShowGraph);
+
+    if (menuEnableLoopClosing)
+      mpSystem->EnableLoopClosing();
+    else
+      mpSystem->DisableLoopClosing();
+
     if (menuShowPoints) mpMapDrawer->DrawMapPoints();
 
     if (menuShowOctomap) mpMapDrawer->DrawMapCollision();
@@ -234,11 +243,18 @@ void Viewer::Run() {
       menuSaveMap = false;
     }
 
+    if (menuPause) {
+      mpSystem->SetPause();
+      menuPause = false;
+    }
+
     if (menuReset) {
       menuShowGraph = true;
+      menuEnableLoopClosing = true;
       menuShowKeyFrames = true;
       menuShowPoints = true;
       menuShowOctomap = true;
+      menuPause = false;
       menuLocalizationMode = false;
       if (bLocalizationMode) mpSystem->DeactivateLocalizationMode();
       bLocalizationMode = false;
